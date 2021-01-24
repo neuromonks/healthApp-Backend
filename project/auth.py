@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User, Hospital # Patient, Doctor,
+from .models import User, Hospital, PatientWeight, MNAForm, MUSTForm # Patient, Doctor,
 from . import db
 import json
 
@@ -43,7 +43,7 @@ def login_post():
         return jsonify(response(True,'Login Successful',result))
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/signup', methods=['POST'])
 def signup_post():
@@ -61,6 +61,8 @@ def signup_post():
         hospital_id = data.get('hospital_id','')
         agreement_check = data.get('agreement_check',False)
         is_active = data.get('is_active',False)
+        height = data.get('height',None)
+        weight = data.get('weight',None)
 
         user = User.query.filter_by(email=email).first() # if this returns a user, then the email already exists in database
         if user: # if a user is found, we want to redirect back to signup page so user can try again
@@ -71,7 +73,8 @@ def signup_post():
                         password=generate_password_hash(password, method='sha256'),
                         user_type = user_type, mobile=mobile, dob = dob,
                         gender = gender, address = address, hospital_id = hospital_id,
-                        agreement_check = agreement_check)
+                        agreement_check = agreement_check,height = height,
+                        weight = weight)
 
         # add the new user to the database
         db.session.add(new_user)
@@ -80,7 +83,7 @@ def signup_post():
         return jsonify(response(True,'User added successfully'))
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/update_profile', methods=['PUT'])
 def update_profile_put():
@@ -91,6 +94,8 @@ def update_profile_put():
         email = data.get('email')
         user = User.query.filter_by(email=email).first()
 
+        if not user:
+            return jsonify(response(False,'User not found'))
         # user_type = user.user_type
         # if user_type in ['patient', 'doctor']:
         #     row_obj = eval(f'user.{user.user_type}')
@@ -104,7 +109,7 @@ def update_profile_put():
 
         return jsonify(response(True,'Updated successfully!!',result))
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/profile', methods=['GET'])
 def profile_get():
@@ -112,7 +117,6 @@ def profile_get():
         data = json.loads(request.data)
         email = data.get('email')
         result = []
-        import pdb; pdb.set_trace()
         user = User.query.filter_by(email=email).first() # if this returns a user, then the email already exists in database
         if not user:
             return jsonify(response(message='User not found'))
@@ -124,7 +128,7 @@ def profile_get():
 
         return jsonify(response(True,result=result))
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/inactive_user', methods=['GET','POST'])
 def inactive_user_get():
@@ -150,14 +154,16 @@ def inactive_user_get():
 
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/user_list', methods=['GET'])
 def user_list_get():
     try:
         user_type = request.args.get('user_type','')
+        hospital_id = request.args.get('hospital_id','')
         if user_type in ['patient','doctor','admin']:
-            user_list = User.query.filter_by(user_type=user_type).all()
+
+            user_list = User.query.filter_by(user_type=user_type).all() if not hospital_id else User.query.filter_by(user_type=user_type,hospital_id = hospital_id).all()
             result = []
             for idx, user in enumerate(user_list):
                 result.append({i.name: getattr(user, i.name) for i in user.__table__.columns if i.name not in ['id','password']})
@@ -172,7 +178,7 @@ def user_list_get():
 
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/delete_user',methods=['POST','DELETE'])
 def user_delete():
@@ -189,7 +195,7 @@ def user_delete():
         return jsonify(response(False,'User deost not exists'))
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/hospital',methods=['GET',"POST","PUT"])
 def hospital_data():
@@ -216,6 +222,9 @@ def hospital_data():
             return jsonify(response(True,'Hospital added successfully'))
 
         if request.method == 'PUT': #TODO: Fix CORS error
+            data = json.loads(request.data)
+            id = data.get('id','')
+            result = []
             if id:
                 hospital = Hospital.query.filter_by(id=id).first()
                 for i in hospital.__table__.columns:
@@ -230,7 +239,7 @@ def hospital_data():
             return jsonify(response(False, 'Hospital ID does not exists.'))
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/update_hospital',methods=['POST'])
 def hospital_update():
@@ -254,8 +263,7 @@ def hospital_update():
 
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
-
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
 
 @auth.route('/delete_hospital',methods=['POST','DELETE'])
 def hospital_delete():
@@ -278,4 +286,113 @@ def hospital_delete():
         return jsonify(response(False, 'Hospital ID does not exists.'))
 
     except Exception as e:
-        return jsonify(response(False,'Some unknown error occured. Please try again after sometime.',{"traceback":str(e)}))
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
+
+@auth.route('/patient_weight',methods=['GET','POST'])
+def patient_weight():
+    try:
+
+        data = json.loads(request.data)
+        patient_id = data.get('patient_id',None)
+
+        result = []
+        if not bool(User.query.filter_by(id = patient_id, user_type='patient').first()):
+            return jsonify(response(False,'Patient does not exists'))
+
+        if request.method =='GET':
+            patient_details = PatientWeight.query.filter_by(patient_id = patient_id).all()
+            for patient in patient_details:
+                result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
+
+            return jsonify(response(True,result=result))
+
+        if request.method == 'POST':
+
+            month = data.get('month','')
+            height = data.get('height','')
+            weight = data.get('weight','')
+
+            patient_details = PatientWeight.query.filter_by(patient_id = patient_id, month = month).first()
+            if bool(patient_details):
+                for i in patient_details.__table__.columns:
+                    if i.name in [*data]:
+                        patient_details.__setattr__(i.name, data[i.name])
+                db.session.commit()
+
+                return jsonify(response(True,'Details added successfully'))
+
+
+
+            patient_details = PatientWeight(patient_id = patient_id, month = month,
+                                            height = height, weight = weight)
+
+            db.session.add(patient_details)
+            db.session.commit()
+
+            return jsonify(response(True,'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
+
+@auth.route('/form/must',methods=['GET','POST'])
+def must_form():
+    try:
+
+        data = json.loads(request.data)
+        patient_id = data.get('patient_id', None)
+        result = []
+
+        if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
+            return jsonify(response(False, 'Patient does not exists'))
+
+        if request.method == 'GET':
+            patient_details = MUSTForm.query.filter_by(patient_id=patient_id).all()
+            for patient in patient_details:
+                result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
+
+            return jsonify(response(True, result=result))
+
+        if request.method == 'POST':
+            must = MUSTForm()
+            for i in must.__table__.columns:
+                if i.name in [*data]:
+                    must.__setattr__(i.name, data[i.name])
+            db.session.add(must)
+            db.session.commit()
+
+            return jsonify(response(True,'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(response(False,'Some unknown error occurred. Please try again after sometime.',[{"traceback":str(e)}]))
+
+@auth.route('/form/mna',methods=['GET','POST'])
+def mna_form():
+    try:
+
+        data = json.loads(request.data)
+        patient_id = data.get('patient_id', None)
+        result = []
+
+        if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
+            return jsonify(response(False, 'Patient does not exists'))
+
+        if request.method == 'GET':
+            patient_details = MNAForm.query.filter_by(patient_id=patient_id).all()
+            for patient in patient_details:
+                result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
+
+            return jsonify(response(True, result=result))
+
+        if request.method == 'POST':
+            mna = MNAForm()
+            for i in mna.__table__.columns:
+                if i.name in [*data]:
+                    mna.__setattr__(i.name, data[i.name])
+            db.session.add(mna)
+            db.session.commit()
+
+            return jsonify(response(True, 'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
