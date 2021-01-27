@@ -291,15 +291,23 @@ def hospital_delete():
 @auth.route('/patient_weight',methods=['GET','POST'])
 def patient_weight():
     try:
-
-        data = json.loads(request.data)
-        patient_id = data.get('patient_id',None)
-
+        
+        
+        
+        
+        if request.method =='GET':
+            patient_id = request.args.get('patient_id','')
+            # app.logger.debug(patient_id)
+        else:
+            data = json.loads(request.data)
+            patient_id = data.get('patient_id',None)
+        
         result = []
         if not bool(User.query.filter_by(id = patient_id, user_type='patient').first()):
             return jsonify(response(False,'Patient does not exists'))
 
         if request.method =='GET':
+            
             patient_details = PatientWeight.query.filter_by(patient_id = patient_id).all()
             for patient in patient_details:
                 result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
@@ -338,8 +346,11 @@ def patient_weight():
 def must_form():
     try:
 
-        data = json.loads(request.data)
-        patient_id = data.get('patient_id', None)
+        if request.method =='GET':
+            patient_id = request.args.get('patient_id','')
+        else:
+            data = json.loads(request.data)
+            patient_id = data.get('patient_id',None)
         result = []
 
         if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
@@ -368,9 +379,11 @@ def must_form():
 @auth.route('/form/mna',methods=['GET','POST'])
 def mna_form():
     try:
-
-        data = json.loads(request.data)
-        patient_id = data.get('patient_id', None)
+        if request.method =='GET':
+            patient_id = request.args.get('patient_id','')
+        else:
+            data = json.loads(request.data)
+            patient_id = data.get('patient_id',None)
         result = []
 
         if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
