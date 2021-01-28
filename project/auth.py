@@ -166,7 +166,7 @@ def user_list_get():
             user_list = User.query.filter_by(user_type=user_type).all() if not hospital_id else User.query.filter_by(user_type=user_type,hospital_id = hospital_id).all()
             result = []
             for idx, user in enumerate(user_list):
-                result.append({i.name: getattr(user, i.name) for i in user.__table__.columns if i.name not in ['id','password']})
+                result.append({i.name: getattr(user, i.name) for i in user.__table__.columns if i.name not in ['password']})
 
                 result[idx]['hospital_name'] = ''
                 if user.hospital_id:
