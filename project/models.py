@@ -75,6 +75,34 @@ class MNAForm(db.Model):
     screeningScore = db.Column(db.Float, nullable=True)
 
 
+
+class NRSForm(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+    patient_id = db.Column(db.Integer, nullable=True)
+    disease = db.Column(db.Float, nullable=True)
+    nutritionStatus = db.Column(db.Float, nullable=True)
+    bmiIndicator = db.Column(db.Float, nullable=True)
+    weightChange = db.Column(db.Float, nullable=True)
+    dieteryIntakeLost = db.Column(db.Float, nullable=True)
+    illFlag = db.Column(db.Float, nullable=True)
+    finalResult = db.Column(db.String, nullable=True)
+    finalScore = db.Column(db.Float, nullable=True)
+
+class MNST20Form(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+    patient_id = db.Column(db.Integer, nullable=True)
+    bmi = db.Column(db.Float, nullable=True)
+    nutritionHealth = db.Column(db.Float, nullable=True)
+    nutritionStatus = db.Column(db.Float, nullable=True)
+    disease = db.Column(db.Float, nullable=True)
+    mobility = db.Column(db.Float, nullable=True)
+    modeOfFeeding = db.Column(db.Float, nullable=True)
+    healthStatus = db.Column(db.String, nullable=True)
+    finalResult = db.Column(db.String, nullable=True)
+    finalScore = db.Column(db.Float, nullable=True)
+
 # class Patient(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
 #     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

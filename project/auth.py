@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User, Hospital, PatientWeight, MNAForm, MUSTForm # Patient, Doctor,
+from .models import User, Hospital, PatientWeight, MNAForm, MUSTForm, MNST20Form, NRSForm # Patient, Doctor,
 from . import db
 import json
 
@@ -398,6 +398,74 @@ def mna_form():
 
         if request.method == 'POST':
             mna = MNAForm()
+            for i in mna.__table__.columns:
+                if i.name in [*data]:
+                    mna.__setattr__(i.name, data[i.name])
+            db.session.add(mna)
+            db.session.commit()
+
+            return jsonify(response(True, 'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/form/nrs',methods=['GET','POST'])
+def nrs_form():
+    try:
+        if request.method =='GET':
+            patient_id = request.args.get('patient_id','')
+        else:
+            data = json.loads(request.data)
+            patient_id = data.get('patient_id',None)
+        result = []
+
+        if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
+            return jsonify(response(False, 'Patient does not exists'))
+
+        if request.method == 'GET':
+            patient_details = NRSForm.query.filter_by(patient_id=patient_id).all()
+            for patient in patient_details:
+                result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
+
+            return jsonify(response(True, result=result))
+
+        if request.method == 'POST':
+            mna = NRSForm()
+            for i in mna.__table__.columns:
+                if i.name in [*data]:
+                    mna.__setattr__(i.name, data[i.name])
+            db.session.add(mna)
+            db.session.commit()
+
+            return jsonify(response(True, 'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/form/mnst',methods=['GET','POST'])
+def mnst_form():
+    try:
+        if request.method =='GET':
+            patient_id = request.args.get('patient_id','')
+        else:
+            data = json.loads(request.data)
+            patient_id = data.get('patient_id',None)
+        result = []
+
+        if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
+            return jsonify(response(False, 'Patient does not exists'))
+
+        if request.method == 'GET':
+            patient_details = MNST20Form.query.filter_by(patient_id=patient_id).all()
+            for patient in patient_details:
+                result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
+
+            return jsonify(response(True, result=result))
+
+        if request.method == 'POST':
+            mna = MNST20Form()
             for i in mna.__table__.columns:
                 if i.name in [*data]:
                     mna.__setattr__(i.name, data[i.name])
