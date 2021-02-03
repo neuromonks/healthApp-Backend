@@ -480,7 +480,7 @@ def mnst_form():
 def form_data():
     try:
         result = []
-        import pdb;pdb.set_trace()
+
         patient_id = request.args.get('patient_id','')
         date = request.args.get('date','')
 
