@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, Hospital, PatientWeight, MNAForm, MUSTForm, MNST20Form, NRSForm # Patient, Doctor,
 from . import db
 import json
+from sqlalchemy import func
+import datetime
 
 auth = Blueprint('auth', __name__)
 
@@ -291,10 +293,6 @@ def hospital_delete():
 @auth.route('/patient_weight',methods=['GET','POST'])
 def patient_weight():
     try:
-        
-        
-        
-        
         if request.method =='GET':
             patient_id = request.args.get('patient_id','')
             # app.logger.debug(patient_id)
@@ -473,6 +471,39 @@ def mnst_form():
             db.session.commit()
 
             return jsonify(response(True, 'Details added successfully'))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/form/data',methods=['GET'])
+def form_data():
+    try:
+        result = []
+        import pdb;pdb.set_trace()
+        patient_id = request.args.get('patient_id','')
+        date = request.args.get('date','')
+
+        if not bool(User.query.filter_by(id=patient_id, user_type='patient').first()):
+            return jsonify(response(False, 'Patient does not exists'))
+
+        if not date:
+            return jsonify(response(False, 'Date not provided'))
+
+        date = [int(i) for i in date.split('-')]
+
+        must = MUSTForm.query.filter(patient_id == patient_id,
+                                     func.DATE(MUSTForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+        mna = MNAForm.query.filter(patient_id == patient_id,
+                                     func.DATE(MNAForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+        nrs = NRSForm.query.filter(patient_id == patient_id,
+                                     func.DATE(NRSForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+
+        result.append({'must': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in must] if must else []})
+        result.append({'mna': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mna] if mna else []})
+        result.append({'nrs': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in nrs] if nrs else []})
+
+        return jsonify(response(True, result=result))
 
     except Exception as e:
         return jsonify(
