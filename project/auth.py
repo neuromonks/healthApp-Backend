@@ -7,8 +7,33 @@ from . import db
 import json
 from sqlalchemy import func
 import datetime
+import pickle
+import numpy as np
+from os.path import join, dirname, realpath
 
 auth = Blueprint('auth', __name__)
+
+# MNST20 - Predictor
+dt_mnst20 = 'models/dt_msnt20_all.sav'
+mnst20_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_mnst20), 'rb'))
+mnst20_class = ['Low Risk', 'Medium Risk', 'High Risk']
+
+# MUST - Predictor
+dt_must = 'models/dt_must_all.sav'
+must_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_must), 'rb'))
+must_class = ['Low Risk', 'Medium Risk', 'High Risk']
+
+# MNA - Predictor
+dt_mna = 'models/dt_mna_all.sav'
+mna_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_mna), 'rb'))
+mna_class = ['Normal', 'Malnourished', 'At Risk']
+
+# NRS - Predictor
+dt_nrs = 'models/dt_nrs_all.sav'
+nrs_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_nrs), 'rb'))
+nrs_class = ['Normal','At risk']
+
+
 
 def response(status = False, message = '', result = []):
     json_dict = dict()
@@ -299,13 +324,13 @@ def patient_weight():
         else:
             data = json.loads(request.data)
             patient_id = data.get('patient_id',None)
-        
+
         result = []
         if not bool(User.query.filter_by(id = patient_id, user_type='patient').first()):
             return jsonify(response(False,'Patient does not exists'))
 
         if request.method =='GET':
-            
+
             patient_details = PatientWeight.query.filter_by(patient_id = patient_id).all()
             for patient in patient_details:
                 result.append({i.name: getattr(patient, i.name) for i in patient.__table__.columns})
@@ -502,6 +527,42 @@ def form_data():
         result['must']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in must] if must else []
         result['mna']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mna] if mna else []
         result['nrs']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in nrs] if nrs else []
+
+        return jsonify(response(True, result=result))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/form/prediction',methods=['GET'])
+def form_predict():
+    try:
+        result = []
+        form_name = request.args.get('form_name','')
+        form_data = json.loads(request.data)
+
+
+        if form_name == 'mnst20':
+            # model_input = form_data['mnst20_total_score']
+            model_input = [float(v) for v in form_data.values()]
+            prediction = mnst20_class[mnst20_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            # prediction = mnst20_class[mnst20_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+            result.append({'prediction':prediction})
+
+        if form_name == 'must':
+            model_input = [float(v) for v in form_data.values()]
+            prediction = must_class[must_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            result.append({'prediction':prediction})
+
+        if form_name == 'mna':
+            model_input = [float(v) for v in form_data.values()]
+            prediction = mna_class[mna_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            result.append({'prediction':prediction})
+
+        if form_name == 'nrs':
+            model_input = [float(v) for v in form_data.values()]
+            prediction = nrs_class[nrs_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            result.append({'prediction':prediction})
 
         return jsonify(response(True, result=result))
 
