@@ -47,6 +47,7 @@ class MUSTForm(db.Model):
     bmi_score = db.Column(db.Float, nullable=True)
     weight_change_percentage = db.Column(db.Float, nullable=True)
     weight_change_score = db.Column(db.Float, nullable=True)
+    finalScore = db.Column(db.Float, nullable=True)
 
 class MNAForm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -73,7 +74,7 @@ class MNAForm(db.Model):
     questionP = db.Column(db.Float, nullable=True)
     assessmentScore = db.Column(db.Float, nullable=True)
     screeningScore = db.Column(db.Float, nullable=True)
-
+    finalScore = db.Column(db.Float, nullable=True)
 
 
 class NRSForm(db.Model):

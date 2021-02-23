@@ -479,7 +479,7 @@ def mnst_form():
 @auth.route('/form/data',methods=['GET'])
 def form_data():
     try:
-        result = []
+        result = {}
 
         patient_id = request.args.get('patient_id','')
         date = request.args.get('date','')
@@ -493,15 +493,15 @@ def form_data():
         date = [int(i) for i in date.split('-')]
 
         must = MUSTForm.query.filter(patient_id == patient_id,
-                                     func.DATE(MUSTForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+                                     func.DATE(MUSTForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(MUSTForm.id.desc()).all()
         mna = MNAForm.query.filter(patient_id == patient_id,
-                                     func.DATE(MNAForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+                                     func.DATE(MNAForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(MNAForm.id.desc()).all()
         nrs = NRSForm.query.filter(patient_id == patient_id,
-                                     func.DATE(NRSForm.timestamp) == datetime.date(date[0], date[1], date[2])).all()
+                                     func.DATE(NRSForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(NRSForm.id.desc()).all()
 
-        result.append({'must': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in must] if must else []})
-        result.append({'mna': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mna] if mna else []})
-        result.append({'nrs': [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in nrs] if nrs else []})
+        result['must']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in must] if must else []
+        result['mna']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mna] if mna else []
+        result['nrs']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in nrs] if nrs else []
 
         return jsonify(response(True, result=result))
 
