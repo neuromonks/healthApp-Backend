@@ -4,12 +4,15 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, Hospital, PatientWeight, MNAForm, MUSTForm, MNST20Form, NRSForm # Patient, Doctor,
 from . import db
+from . import mail
 import json
 from sqlalchemy import func
 import datetime
 import pickle
 import numpy as np
 from os.path import join, dirname, realpath
+from flask_mail import  Message
+import random
 
 auth = Blueprint('auth', __name__)
 
@@ -455,9 +458,18 @@ def nrs_form():
 
         if request.method == 'POST':
             mna = NRSForm()
+            user = User.query.filter_by(id=patient_id).first()
+            user.__setattr__('disease_name', data['disease_name'])
+            # db.session("UPDATE user SET disease_name = "+ data['disease_name'] + " WHERE id = " + patient_id).execute()
             for i in mna.__table__.columns:
                 if i.name in [*data]:
-                    mna.__setattr__(i.name, data[i.name])
+                    print(i.name)
+                    if i.name=='disease_name':
+                        print('shubham')
+
+
+                    else:
+                        mna.__setattr__(i.name, data[i.name])
             db.session.add(mna)
             db.session.commit()
 
@@ -541,6 +553,8 @@ def form_predict():
         form_name = request.args.get('form_name','')
         form_data = json.loads(request.data)
 
+        print(form_name)
+        print(form_data)
 
         if form_name == 'mnst20':
             # model_input = form_data['mnst20_total_score']
@@ -565,6 +579,108 @@ def form_predict():
             result.append({'prediction':prediction})
 
         return jsonify(response(True, result=result))
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+
+@auth.route('/user/comorbity-stat',methods=['GET'])
+def comorbityStat():
+    try:
+        comorbityData = []
+        maleFemaleData = []
+        doctorCount = []
+        patientCount = []
+        result = db.session.execute('select disease_name, COUNT(*) from user GROUP BY disease_name')
+        for row in result:
+            comorbityData.append([row[0],row[1]])
+        result = db.session.execute('select gender, COUNT(*) from user GROUP BY gender')
+        for row in result:
+            maleFemaleData.append([row[0], row[1]])
+        result = db.session.execute('select  COUNT(*) from user WHERE "user_type" = "doctor"')
+
+        for row in result:
+            doctorCount.append(row[0])
+        result = db.session.execute('select  COUNT(*) from user WHERE "user_type" = "patient"')
+        for row in result:
+            patientCount.append(row[0])
+
+        json_dict = dict()
+        json_dict['success'] = True
+        json_dict['message'] = 'Success'
+        json_dict['result'] = {
+            'comorbityData' : comorbityData,
+            'maleFemaleRation':maleFemaleData,
+            "patientCount":patientCount,
+            "doctorCount":doctorCount
+        }
+        return jsonify(json_dict)
+
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/user/forgotPassord',methods=['GET'])
+def forgot_password():
+    try:
+        comorbityData = []
+        maleFemaleData = []
+        hospitalWiseData = []
+        doctorWiseDara = []
+        patient_email= request.args.get('email', '')
+        user = User.query.filter_by(email=patient_email).first()
+
+        if not user:
+            return jsonify(response(False, 'User not found'))
+
+        otp = random.randint(1111,9999)
+
+        user.__setattr__('otp', otp)
+        msg = Message(subject="Hello",
+                      sender=user.name,
+                      recipients=[user.email],  # replace with your email for testing
+                      body="Please Use OTP: "+str(otp)+" for password reset. \n Team Health App")
+        mail.send(msg)
+
+        db.session.commit()
+
+        json_dict = dict()
+        json_dict['success'] = True
+        json_dict['message'] = 'Mail Send Successfully'
+        json_dict['result'] = { "otp": otp}
+        return jsonify(json_dict)
+
+
+    except Exception as e:
+        return jsonify(
+            response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
+
+@auth.route('/user/changePassord',methods=['POST'])
+def update_password():
+    try:
+        data = json.loads(request.data)
+        user = User.query.filter_by(email=data['email']).first()
+
+        if not user:
+            return jsonify(response(False, 'User not found'))
+
+        print(str(user.otp),data['otp'],str(user.otp) != str(data['otp']))
+        if str(user.otp) != str(data['otp']):
+            return jsonify(response(False, 'Wrong OTP'))
+
+        user.__setattr__('password', generate_password_hash(data['password']))
+        db.session.commit()
+
+
+
+        json_dict = dict()
+        json_dict['success'] = True
+        json_dict['message'] = 'Password Changed Successfully'
+        json_dict['result'] = { }
+        return jsonify(json_dict)
+
 
     except Exception as e:
         return jsonify(

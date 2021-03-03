@@ -20,6 +20,8 @@ class User(UserMixin,db.Model):
     hospital_id = db.Column(db.Integer, nullable=True)
     height = db.Column(db.Float, nullable=True)
     weight = db.Column(db.Float, nullable=True)
+    disease_name = db.Column(db.Text, nullable=True)
+    otp = db.Column(db.Integer, nullable=True)
     # hospital_name = db.relationship('Hospital',backref='user',cascade="all,delete",uselist=True)
 
 
