@@ -14,22 +14,26 @@ from os.path import join, dirname, realpath
 auth = Blueprint('auth', __name__)
 
 # MNST20 - Predictor
-dt_mnst20 = 'models/dt_msnt20_all.sav'
+# dt_mnst20 = 'models/dt_msnt20_all.sav'
+dt_mnst20 = 'models/dt_msnt20_total_score.sav'
 mnst20_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_mnst20), 'rb'))
 mnst20_class = ['Low Risk', 'Medium Risk', 'High Risk']
 
 # MUST - Predictor
-dt_must = 'models/dt_must_all.sav'
+# dt_must = 'models/dt_must_all.sav'
+dt_must = 'models/dt_must_total_score.sav'
 must_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_must), 'rb'))
 must_class = ['Low Risk', 'Medium Risk', 'High Risk']
 
 # MNA - Predictor
-dt_mna = 'models/dt_mna_all.sav'
+# dt_mna = 'models/dt_mna_all.sav'
+dt_mna = 'models/dt_mna_total_score.sav'
 mna_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_mna), 'rb'))
 mna_class = ['Normal', 'Malnourished', 'At Risk']
 
 # NRS - Predictor
-dt_nrs = 'models/dt_nrs_all.sav'
+# dt_nrs = 'models/dt_nrs_all.sav'
+dt_nrs = 'models/dt_nrs_total_score.sav'
 nrs_predictor = pickle.load(open(join(dirname(realpath(__file__)),dt_nrs), 'rb'))
 nrs_class = ['Normal','At risk']
 
@@ -543,25 +547,35 @@ def form_predict():
 
 
         if form_name == 'mnst20':
-            # model_input = form_data['mnst20_total_score']
-            model_input = [float(v) for v in form_data.values()]
-            prediction = mnst20_class[mnst20_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
-            # prediction = mnst20_class[mnst20_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+            model_input = form_data['total_score']
+            prediction = mnst20_class[mnst20_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+
+            # model_input = [float(v) for v in form_data.values()]
+            # prediction = mnst20_class[mnst20_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
             result.append({'prediction':prediction})
 
         if form_name == 'must':
-            model_input = [float(v) for v in form_data.values()]
-            prediction = must_class[must_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            model_input = form_data['total_score']
+            prediction = must_class[must_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+
+            # model_input = [float(v) for v in form_data.values()]
+            # prediction = must_class[must_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
             result.append({'prediction':prediction})
 
         if form_name == 'mna':
-            model_input = [float(v) for v in form_data.values()]
-            prediction = mna_class[mna_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            model_input = form_data['total_score']
+            prediction = mna_class[mna_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+
+            # model_input = [float(v) for v in form_data.values()]
+            # prediction = mna_class[mna_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
             result.append({'prediction':prediction})
 
         if form_name == 'nrs':
-            model_input = [float(v) for v in form_data.values()]
-            prediction = nrs_class[nrs_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
+            model_input = form_data['total_score']
+            prediction = nrs_class[nrs_predictor.predict(np.array(float(model_input)).reshape(1, -1))[0]]
+
+            # model_input = [float(v) for v in form_data.values()]
+            # prediction = nrs_class[nrs_predictor.predict(np.array(model_input).reshape(1, -1))[0]]
             result.append({'prediction':prediction})
 
         return jsonify(response(True, result=result))
