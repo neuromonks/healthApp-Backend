@@ -20,6 +20,8 @@ class User(UserMixin,db.Model):
     hospital_id = db.Column(db.Integer, nullable=True)
     height = db.Column(db.Float, nullable=True)
     weight = db.Column(db.Float, nullable=True)
+    disease_name = db.Column(db.Text, nullable=True)
+    otp = db.Column(db.Integer, nullable=True)
     # hospital_name = db.relationship('Hospital',backref='user',cascade="all,delete",uselist=True)
 
 
@@ -47,6 +49,7 @@ class MUSTForm(db.Model):
     bmi_score = db.Column(db.Float, nullable=True)
     weight_change_percentage = db.Column(db.Float, nullable=True)
     weight_change_score = db.Column(db.Float, nullable=True)
+    finalScore = db.Column(db.Float, nullable=True)
 
 class MNAForm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -73,7 +76,7 @@ class MNAForm(db.Model):
     questionP = db.Column(db.Float, nullable=True)
     assessmentScore = db.Column(db.Float, nullable=True)
     screeningScore = db.Column(db.Float, nullable=True)
-
+    finalScore = db.Column(db.Float, nullable=True)
 
 
 class NRSForm(db.Model):
