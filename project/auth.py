@@ -463,7 +463,8 @@ def nrs_form():
         if request.method == 'POST':
             mna = NRSForm()
             user = User.query.filter_by(id=patient_id).first()
-            user.__setattr__('disease_name', data['disease_name'])
+            if 'disease_name' in data:
+                user.__setattr__('disease_name', data['disease_name'])
             # db.session("UPDATE user SET disease_name = "+ data['disease_name'] + " WHERE id = " + patient_id).execute()
             for i in mna.__table__.columns:
                 if i.name in [*data]:
@@ -550,7 +551,7 @@ def form_data():
         return jsonify(
             response(False, 'Some unknown error occurred. Please try again after sometime.', {"traceback": str(e)}))
 
-@auth.route('/form/prediction',methods=['GET'])
+@auth.route('/form/prediction',methods=['POST'])
 def form_predict():
     try:
         result = []
