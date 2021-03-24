@@ -540,10 +540,12 @@ def form_data():
                                      func.DATE(MNAForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(MNAForm.id.desc()).all()
         nrs = NRSForm.query.filter(patient_id == patient_id,
                                      func.DATE(NRSForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(NRSForm.id.desc()).all()
-
+        mnst20 = MNST20Form.query.filter(patient_id == patient_id,
+                                     func.DATE(NRSForm.timestamp) == datetime.date(date[0], date[1], date[2])).order_by(MNST20Form.id.desc()).all()
         result['must']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in must] if must else []
         result['mna']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mna] if mna else []
         result['nrs']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in nrs] if nrs else []
+        result['mnst20']= [{i.name: getattr(x, i.name) for i in x.__table__.columns} for x in mnst20] if nrs else []
 
         return jsonify(response(True, result=result))
 
